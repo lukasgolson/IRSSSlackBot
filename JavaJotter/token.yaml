@@ -1,0 +1,8 @@
+﻿OAuthToken: ""
+AppLevelToken: ""
+SigningSecret: ""
+DatabaseHost: ""
+DatabasePort: ""
+DatabaseUsername: ""
+DatabasePassword: ""
+Database: ""
