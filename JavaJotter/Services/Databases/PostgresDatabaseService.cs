@@ -124,7 +124,7 @@ public class PostgresDatabaseService : IDatabaseConnection
     }
 
 
-    public async Task<Roll?> GetLastScrape()
+    public async Task<Roll?> GetLatestRoll()
     {
         await CreateTables();
 

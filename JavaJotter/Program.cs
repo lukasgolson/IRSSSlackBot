@@ -18,7 +18,7 @@ public static class Program
     private static IContainer? _container;
 
     private static bool _onlineMode = true;
-    private static DbProviderEnum _databaseType = DbProviderEnum.Local;
+    private static DbProviderEnum _databaseType = DbProviderEnum.Postgres;
 
     private static async Task Main(string[] args)
     {
@@ -54,7 +54,11 @@ public static class Program
     {
         _onlineMode = !args.Any(arg => string.Equals(arg, "--offline", StringComparison.OrdinalIgnoreCase));
 
-        if (args.Any(arg => string.Equals(arg, "--postgres", StringComparison.OrdinalIgnoreCase)))
+        if (args.Any(arg => string.Equals(arg, "--sqlite", StringComparison.OrdinalIgnoreCase)))
+        {
+            _databaseType = DbProviderEnum.Local;
+        }
+        else
         {
             _databaseType = DbProviderEnum.Postgres;
         }

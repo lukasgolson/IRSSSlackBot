@@ -18,11 +18,10 @@ public class SlackScrappingService : IMessageScrapper
     }
 
 
-    public async Task<List<Message>> Scrape(DateTime? date)
+    public async IAsyncEnumerable<Message> Scrape(DateTime? oldestMessageDate)
     {
         var conversationListResponse = await _slackClient.Conversations.List();
 
-        var messages = new List<Message>();
 
         foreach (var channel in conversationListResponse.Channels)
         {
@@ -30,7 +29,7 @@ public class SlackScrappingService : IMessageScrapper
 
             _logger.Log($"Scraping channel: {channel.Name}...");
 
-            var messageEvents = await GetMessages(channel, date);
+            var messageEvents = await GetMessages(channel, oldestMessageDate);
 
 
             foreach (var messageEvent in messageEvents)
@@ -42,19 +41,19 @@ public class SlackScrappingService : IMessageScrapper
                 }
 
 
-                messages.Add(new Message(messageEvent.Channel, messageEvent.Timestamp, messageEvent.ClientMsgId,
-                    messageEvent.User, messageEvent.Text, attachmentTexts));
+                yield return new Message(messageEvent.Channel, messageEvent.Timestamp, messageEvent.ClientMsgId,
+                    messageEvent.User, messageEvent.Text, attachmentTexts);
             }
         }
-
-        return messages;
     }
 
-    private async Task<List<MessageEvent>> GetMessages(Conversation conversation, DateTime? oldest = null)
+    private async Task<List<MessageEvent>> GetMessages(Conversation conversation, DateTime? oldestMessage = null)
     {
         var oldestTs = "";
 
-        oldestTs = oldest != null ? oldest.Value.ToTimestamp() : DateTime.Today.AddYears(-1).ToTimestamp();
+        oldestTs = oldestMessage != null
+            ? oldestMessage.Value.ToTimestamp()
+            : DateTime.Today.AddYears(-1).ToTimestamp();
 
         var messageEvents = new List<MessageEvent>();
 

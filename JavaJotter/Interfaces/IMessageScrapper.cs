@@ -5,11 +5,5 @@ namespace JavaJotter.Interfaces;
 
 public interface IMessageScrapper
 {
-    public Task<List<Message>> Scrape(DateTime? date);
-
-
-    public Task<List<Message>> Scrape()
-    {
-        return Scrape(null);
-    }
+    public IAsyncEnumerable<Message> Scrape(DateTime? oldestMessageDate);
 }

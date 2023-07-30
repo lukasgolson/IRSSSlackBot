@@ -10,11 +10,9 @@ internal class MockScrappingService : IMessageScrapper
     private static readonly Random Random = new();
 
 
-    public Task<List<Message>> Scrape(DateTime? date)
+    public async IAsyncEnumerable<Message> Scrape(DateTime? oldestMessageDate)
     {
-        var messages = new List<Message>();
-
-        var timeStamp = date ?? DateTime.Now -
+        var timeStamp = oldestMessageDate ?? DateTime.Now -
             new TimeSpan(0, Random.Next(24), Random.Next(60), Random.Next(60), Random.Next(1000));
 
         const int numberOfMessages = 100;
@@ -51,10 +49,8 @@ internal class MockScrappingService : IMessageScrapper
             }
 
 
-            messages.Add(new Message("#general", timeStamp, Guid.NewGuid(), userId, text, attachmentTexts));
+            yield return new Message("#general", timeStamp, Guid.NewGuid(), userId, text, attachmentTexts);
         }
-
-        return Task.FromResult(messages);
     }
 
 

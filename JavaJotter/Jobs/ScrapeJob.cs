@@ -34,30 +34,34 @@ public class ScrapeJob : IJob
     public async Task Execute(IJobExecutionContext context)
     {
         _logger.Log("Scraping");
-        var lastRoll = await _databaseConnection.GetLastScrape();
+        var lastRoll = await _databaseConnection.GetLatestRoll();
 
         var lastScrape = lastRoll?.DateTime;
 
         _logger.Log(
             $"Last scrape: {(lastScrape.HasValue ? lastScrape.Value.ToString("yyyy-MM-dd HH:mm:ss") : "Never")}");
 
-        var messages = await _messageScrapper.Scrape(lastScrape);
 
-        List<Roll> rolls = new();
-        foreach (var roll in messages.Select(message => _filter.ProcessMessage(message)))
+
+
+        int rollCounter = 0;
+        await foreach (var message in _messageScrapper.Scrape(lastScrape))
         {
+            var roll = _filter.ProcessMessage(message);
             if (roll == null)
+            {
                 continue;
-            rolls.Add(roll);
-        }
+            }
 
-
-        _logger.Log($"Found {rolls.Count} rolls. Adding to database.");
-
-        foreach (var roll in rolls)
-        {
+            rollCounter++;
             await _databaseConnection.InsertRoll(roll);
         }
+      
+
+
+        _logger.Log($"Found and added {rollCounter} rolls to database.");
+
+     
 
         var nullUsernames = await _databaseConnection.GetNullUsernames();
 

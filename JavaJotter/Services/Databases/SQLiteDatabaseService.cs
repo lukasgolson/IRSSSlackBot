@@ -104,7 +104,7 @@ public partial class SqLiteDatabaseService : IDatabaseConnection, IDisposable
         }
     }
 
-    public async Task<Roll?> GetLastScrape()
+    public async Task<Roll?> GetLatestRoll()
     {
         if (_sqLiteConnection?.State != ConnectionState.Open)
             await Connect();

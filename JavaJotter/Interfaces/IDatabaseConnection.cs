@@ -12,5 +12,5 @@ public interface IDatabaseConnection
     public Task<List<Username>> GetNullUsernames();
     public Task<List<Channel>> GetNullChannels();
 
-    public Task<Roll?> GetLastScrape();
+    public Task<Roll?> GetLatestRoll();
 }
