@@ -39,7 +39,7 @@ public class ScrapeJob : IJob
         _logger.Log(
             $"Last scrape: {(lastScrape.HasValue ? lastScrape.Value.ToString("yyyy-MM-dd HH:mm:ss") : "Never")}");
 
-        var rollCounter = 0;
+        var historicCounter = 0;
 
         var oneYearAgo = DateTime.Today.AddYears(-1);
         if (earliestScrape?.Date > oneYearAgo.Date)
@@ -47,21 +47,27 @@ public class ScrapeJob : IJob
             _logger.Log($"Scraping historic rolls from {oneYearAgo} to {earliestScrape}");
             await foreach (var message in _messageScrapper.Scrape(oneYearAgo, earliestScrape))
             {
-                rollCounter++;
+                historicCounter++;
                 await ProcessRoll(message);
             }
+
+            _logger.Log($"Captured {historicCounter} historic rolls...");
         }
 
-        _logger.Log($"Captured {rollCounter} historic rolls...");
         
+        
+        _logger.Log($"Scraping current rolls from {lastScrape} to {DateTime.Now}");
+
+        var currentCounter = 0;
         await foreach (var message in _messageScrapper.Scrape(lastScrape, DateTime.Now))
         {
-            rollCounter++;
+            currentCounter++;
             await ProcessRoll(message);
         }
 
+        _logger.Log($"Captured {currentCounter} current rolls...");
 
-        _logger.Log($"Found and added {rollCounter} rolls to the database.");
+        _logger.Log($"Found and added {currentCounter + historicCounter} total rolls to the database.");
 
 
         var nullUsernames = await _databaseConnection.GetNullUsernames();
@@ -89,8 +95,7 @@ public class ScrapeJob : IJob
         if (nullChannels.Count > 0)
         {
             _logger.Log($"Found {nullChannels.Count} channels needing identifier reconciliation. Fixing...");
-
-
+            
             foreach (var channel in nullChannels)
             {
                 var channelInfo = await _channelService.GetChannel(channel.Id);
