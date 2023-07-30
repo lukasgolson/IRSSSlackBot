@@ -111,6 +111,21 @@ public partial class SqLiteDatabaseService : IDatabaseConnection, IDisposable
 
         const string sql = @"SELECT * FROM rolls ORDER BY unix_milliseconds DESC LIMIT 1;";
 
+        return await GetRoll(sql);
+    }
+
+    public async Task<Roll?> GetEarliestRoll()
+    {
+        if (_sqLiteConnection?.State != ConnectionState.Open)
+            await Connect();
+
+        const string sql = @"SELECT * FROM rolls ORDER BY unix_milliseconds LIMIT 1;";
+
+        return await GetRoll(sql);
+    }
+
+    private async Task<Roll?> GetRoll(string sql)
+    {
         await using var command = new SQLiteCommand(sql, _sqLiteConnection);
 
 

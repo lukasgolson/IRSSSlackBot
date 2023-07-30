@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using JavaJotter.Interfaces;
+﻿using JavaJotter.Interfaces;
 using JavaJotter.Types;
 using JetBrains.Annotations;
 using Quartz;
@@ -9,9 +8,6 @@ namespace JavaJotter.Jobs;
 [UsedImplicitly]
 public class ScrapeJob : IJob
 {
-    public static readonly JobKey Key = new JobKey("scrape");
-
-
     private readonly ILogger _logger;
     private readonly IMessageScrapper _messageScrapper;
     private readonly IRollFilter _filter;
@@ -34,34 +30,37 @@ public class ScrapeJob : IJob
     public async Task Execute(IJobExecutionContext context)
     {
         _logger.Log("Scraping");
-        var lastRoll = await _databaseConnection.GetLatestRoll();
+        var latestRoll = await _databaseConnection.GetLatestRoll();
+        var earliestRoll = await _databaseConnection.GetEarliestRoll();
 
-        var lastScrape = lastRoll?.DateTime;
+        var lastScrape = latestRoll?.DateTime;
+        var earliestScrape = earliestRoll?.DateTime;
 
         _logger.Log(
             $"Last scrape: {(lastScrape.HasValue ? lastScrape.Value.ToString("yyyy-MM-dd HH:mm:ss") : "Never")}");
 
+        var rollCounter = 0;
 
-
-
-        int rollCounter = 0;
-        await foreach (var message in _messageScrapper.Scrape(lastScrape))
+        var oneYearAgo = DateTime.Today.AddYears(-1);
+        if (earliestScrape > oneYearAgo)
         {
-            var roll = _filter.ProcessMessage(message);
-            if (roll == null)
+            await foreach (var message in _messageScrapper.Scrape(oneYearAgo, earliestScrape))
             {
-                continue;
+                rollCounter++;
+                await ProcessRoll(message);
             }
-
-            rollCounter++;
-            await _databaseConnection.InsertRoll(roll);
         }
-      
+
+
+        await foreach (var message in _messageScrapper.Scrape(lastScrape, DateTime.Now))
+        {
+            rollCounter++;
+            await ProcessRoll(message);
+        }
 
 
         _logger.Log($"Found and added {rollCounter} rolls to database.");
 
-     
 
         var nullUsernames = await _databaseConnection.GetNullUsernames();
 
@@ -112,5 +111,16 @@ public class ScrapeJob : IJob
         }
 
         _logger.Log(completeString);
+    }
+
+    private async Task ProcessRoll(Message message)
+    {
+        var roll = _filter.ExtractRoll(message);
+        if (roll == null)
+        {
+            return;
+        }
+
+        await _databaseConnection.InsertRoll(roll);
     }
 }

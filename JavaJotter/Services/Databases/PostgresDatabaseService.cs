@@ -135,6 +135,25 @@ public class PostgresDatabaseService : IDatabaseConnection
         INNER JOIN channels ON rolls.channel_id = channels.id
         ORDER BY rolls.unix_milliseconds DESC LIMIT 1;";
 
+        return await GetRoll(sql);
+    }
+
+    public async Task<Roll?> GetEarliestRoll()
+    {
+        await CreateTables();
+
+        const string sql = @"
+        SELECT rolls.unix_milliseconds, usernames.slack_id AS user_slack_id, channels.slack_id AS channel_slack_id, rolls.dice_value 
+        FROM rolls 
+        INNER JOIN usernames ON rolls.user_id = usernames.id
+        INNER JOIN channels ON rolls.channel_id = channels.id
+        ORDER BY rolls.unix_milliseconds LIMIT 1;";
+
+        return await GetRoll(sql);
+    }
+
+    private async Task<Roll?> GetRoll(string sql)
+    {
         await using var command = _dataSource.CreateCommand(sql);
         await using var reader = await command.ExecuteReaderAsync();
 

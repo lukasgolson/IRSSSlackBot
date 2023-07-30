@@ -5,5 +5,5 @@ namespace JavaJotter.Interfaces;
 
 public interface IRollFilter
 {
-    public Roll? ProcessMessage(Message messageEvent);
+    public Roll? ExtractRoll(Message message);
 }

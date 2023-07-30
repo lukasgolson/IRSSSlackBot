@@ -18,7 +18,7 @@ public class SlackScrappingService : IMessageScrapper
     }
 
 
-    public async IAsyncEnumerable<Message> Scrape(DateTime? oldestMessageDate)
+    public async IAsyncEnumerable<Message> Scrape(DateTime? oldestMessageDate, DateTime? latestMessageDate)
     {
         var conversationListResponse = await _slackClient.Conversations.List();
 
@@ -29,10 +29,7 @@ public class SlackScrappingService : IMessageScrapper
 
             _logger.Log($"Scraping channel: {channel.Name}...");
 
-            var messageEvents = await GetMessages(channel, oldestMessageDate);
-
-
-            foreach (var messageEvent in messageEvents)
+            await foreach (var messageEvent in GetMessages(channel, oldestMessageDate))
             {
                 var attachmentTexts = new string[messageEvent.Attachments.Count];
                 for (var index = 0; index < messageEvent.Attachments.Count; index++)
@@ -47,31 +44,32 @@ public class SlackScrappingService : IMessageScrapper
         }
     }
 
-    private async Task<List<MessageEvent>> GetMessages(Conversation conversation, DateTime? oldestMessage = null)
+    private async IAsyncEnumerable<MessageEvent> GetMessages(Conversation conversation, DateTime? oldestMessage = null, DateTime? latestMessage = null)
     {
-        var oldestTs = "";
+        var latestTs = DateTime.Now.ToTimestamp();
 
-        oldestTs = oldestMessage != null
-            ? oldestMessage.Value.ToTimestamp()
-            : DateTime.Today.AddYears(-1).ToTimestamp();
+        var oldestTs = oldestMessage == null
+            ? DateTime.Now.AddYears(-1).ToTimestamp()
+            : oldestMessage.Value.ToTimestamp();
 
-        var messageEvents = new List<MessageEvent>();
+        IList<MessageEvent> historyMessages;
 
-        var latestTs = "";
-        var hasMore = true;
-
-        while (hasMore)
+        do
         {
             var history = await _slackClient.Conversations.History(conversation.Id, latestTs, oldestTs);
-            messageEvents.AddRange(history.Messages);
-            latestTs = history.Messages.LastOrDefault()?.Ts;
-            hasMore = history.HasMore;
-        }
 
+            historyMessages = history.Messages;
 
-        foreach (var message in messageEvents)
-            message.Channel = conversation.Id;
-        _logger.Log($"Scraped {messageEvents.Count} messages from {conversation.Name}.");
-        return messageEvents;
+            foreach (var messageEvent in historyMessages)
+            {
+                messageEvent.Channel = conversation.Id;
+                yield return messageEvent;
+            }
+
+            if (historyMessages.Any())
+            {
+                latestTs = historyMessages.Last().Ts;
+            }
+        } while (historyMessages.Any());
     }
 }

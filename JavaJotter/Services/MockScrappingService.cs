@@ -10,7 +10,7 @@ internal class MockScrappingService : IMessageScrapper
     private static readonly Random Random = new();
 
 
-    public async IAsyncEnumerable<Message> Scrape(DateTime? oldestMessageDate)
+    public async IAsyncEnumerable<Message> Scrape(DateTime? oldestMessageDate, DateTime? newestMessageDate)
     {
         var timeStamp = oldestMessageDate ?? DateTime.Now -
             new TimeSpan(0, Random.Next(24), Random.Next(60), Random.Next(60), Random.Next(1000));

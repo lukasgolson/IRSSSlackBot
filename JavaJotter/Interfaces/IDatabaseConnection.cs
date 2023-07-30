@@ -13,4 +13,7 @@ public interface IDatabaseConnection
     public Task<List<Channel>> GetNullChannels();
 
     public Task<Roll?> GetLatestRoll();
+
+    public Task<Roll?> GetEarliestRoll();
+
 }

@@ -7,9 +7,9 @@ namespace JavaJotter.Services;
 
 public partial class RollFilter : IRollFilter
 {
-    public Roll? ProcessMessage(Message messageEvent)
+    public Roll? ExtractRoll(Message message)
     {
-        return TryExtractRoll(messageEvent, out var roll) ? roll : null;
+        return TryExtractRoll(message, out var roll) ? roll : null;
     }
 
 
