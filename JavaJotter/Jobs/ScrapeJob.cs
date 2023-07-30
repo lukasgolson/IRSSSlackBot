@@ -123,8 +123,6 @@ public class ScrapeJob : IJob
             return;
         }
         
-        _logger.Log("Processing roll");
-
         await _databaseConnection.InsertRoll(roll);
     }
 }

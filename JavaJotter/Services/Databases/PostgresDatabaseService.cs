@@ -39,7 +39,8 @@ public class PostgresDatabaseService : IDatabaseConnection
                 (SELECT id FROM channels WHERE slack_id = @channel_id),
                 (SELECT id FROM usernames WHERE slack_id = @user_id),
                 @dice_value
-            );
+            )
+            ON CONFLICT (unix_milliseconds, channel_id) DO NOTHING;
     ";
 
 
