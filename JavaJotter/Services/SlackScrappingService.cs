@@ -29,7 +29,7 @@ public class SlackScrappingService : IMessageScrapper
 
             _logger.Log($"Scraping channel: {channel.Name}...");
 
-            await foreach (var messageEvent in GetMessages(channel, oldestMessageDate))
+            await foreach (var messageEvent in GetMessages(channel, oldestMessageDate, latestMessageDate))
             {
                 var attachmentTexts = new string[messageEvent.Attachments.Count];
                 for (var index = 0; index < messageEvent.Attachments.Count; index++)
@@ -44,21 +44,23 @@ public class SlackScrappingService : IMessageScrapper
         }
     }
 
-    private async IAsyncEnumerable<MessageEvent> GetMessages(Conversation conversation, DateTime? oldestMessage = null, DateTime? latestMessage = null)
+    private async IAsyncEnumerable<MessageEvent> GetMessages(Conversation conversation, DateTime? oldestMessage = null,
+        DateTime? latestMessage = null)
     {
-        var latestTs = DateTime.Now.ToTimestamp();
+        var latestTs = latestMessage == null ? DateTime.Now.ToTimestamp() : latestMessage.Value.ToTimestamp();
 
         var oldestTs = oldestMessage == null
             ? DateTime.Now.AddYears(-1).ToTimestamp()
             : oldestMessage.Value.ToTimestamp();
 
-        IList<MessageEvent> historyMessages;
+        var historyMessages = new List<MessageEvent>();
 
         do
         {
+            historyMessages.Clear();
             var history = await _slackClient.Conversations.History(conversation.Id, latestTs, oldestTs);
 
-            historyMessages = history.Messages;
+            historyMessages.AddRange(history.Messages);
 
             foreach (var messageEvent in historyMessages)
             {

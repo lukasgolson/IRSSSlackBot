@@ -42,8 +42,9 @@ public class ScrapeJob : IJob
         var rollCounter = 0;
 
         var oneYearAgo = DateTime.Today.AddYears(-1);
-        if (earliestScrape > oneYearAgo)
+        if (earliestScrape?.Date > oneYearAgo.Date)
         {
+            _logger.Log($"Scraping historic rolls from {oneYearAgo} to {earliestScrape}");
             await foreach (var message in _messageScrapper.Scrape(oneYearAgo, earliestScrape))
             {
                 rollCounter++;
@@ -51,7 +52,8 @@ public class ScrapeJob : IJob
             }
         }
 
-
+        _logger.Log($"Captured {rollCounter} historic rolls...");
+        
         await foreach (var message in _messageScrapper.Scrape(lastScrape, DateTime.Now))
         {
             rollCounter++;
@@ -59,7 +61,7 @@ public class ScrapeJob : IJob
         }
 
 
-        _logger.Log($"Found and added {rollCounter} rolls to database.");
+        _logger.Log($"Found and added {rollCounter} rolls to the database.");
 
 
         var nullUsernames = await _databaseConnection.GetNullUsernames();
@@ -120,6 +122,8 @@ public class ScrapeJob : IJob
         {
             return;
         }
+        
+        _logger.Log("Processing roll");
 
         await _databaseConnection.InsertRoll(roll);
     }
