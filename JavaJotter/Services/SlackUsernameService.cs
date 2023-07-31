@@ -25,7 +25,7 @@ public class SlackUsernameService : IUsernameService
         _logger.Log($"Found {members.Count} users");
 
 
-        return members.Select(member => Username(member.Id, member.Profile.FirstName, member.Profile.LastName))
+        return members.Select(member => new Username(member.Id, CreateUsername(member.Profile.FirstName, member.Profile.LastName, member.Profile.DisplayName)))
             .ToList();
     }
 
@@ -35,29 +35,31 @@ public class SlackUsernameService : IUsernameService
         var firstName = user.Profile.FirstName;
         var lastName = user.Profile.LastName;
 
-        return Username(user.Id, firstName, lastName);
+        var nickname = user.Profile.DisplayName;
+
+        return new Username(id,CreateUsername(firstName, lastName, nickname));
     }
 
-    private static Username Username(string id, string firstName, string lastName, int maxLength = 7)
+    private static string CreateUsername(string firstName, string lastName, string displayName, int maxLength = 7)
     {
         var lengthPerName = (maxLength - 1) / 2;
 
         var shortFirstName = firstName.Length > lengthPerName ? firstName[..lengthPerName] : firstName;
         var shortLastName = lastName.Length > lengthPerName ? lastName[..lengthPerName] : lastName;
 
-        var username = shortFirstName;
+        string username;
 
         if (!string.IsNullOrEmpty(lastName))
         {
-            username += $" {shortLastName}";
+            username = $"{shortFirstName} {shortLastName}";
         }
         else
         {
             // When the last name is not available, take as many characters as allowed from the first name
-            username = firstName.Length > maxLength ? firstName[..maxLength] : firstName;
+            username = displayName.Length > maxLength ? displayName[..maxLength] : displayName;
         }
 
-        return new Username(id, username);
+        return username;
     }
 
 
