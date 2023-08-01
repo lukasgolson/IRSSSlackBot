@@ -1,4 +1,5 @@
-﻿using JavaJotter.Interfaces;
+﻿using JavaJotter.Configuration.Interfaces;
+using JavaJotter.Interfaces;
 using JavaJotter.Types;
 using JetBrains.Annotations;
 using Quartz;
@@ -14,10 +15,12 @@ public class ScrapeJob : IJob
     private readonly IUsernameService _usernameService;
     private readonly IChannelService _channelService;
     private readonly IDatabaseConnection _databaseConnection;
+    private readonly IAppSettings _appSettings;
 
 
     public ScrapeJob(ILogger logger, IMessageScrapper messageScrapper, IRollFilter filter,
-        IUsernameService usernameService, IChannelService channelService, IDatabaseConnection databaseConnection)
+        IUsernameService usernameService, IChannelService channelService, IDatabaseConnection databaseConnection,
+        IAppSettings appSettings)
     {
         _logger = logger;
         _messageScrapper = messageScrapper;
@@ -25,6 +28,7 @@ public class ScrapeJob : IJob
         _usernameService = usernameService;
         _channelService = channelService;
         _databaseConnection = databaseConnection;
+        _appSettings = appSettings;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -39,9 +43,18 @@ public class ScrapeJob : IJob
         _logger.Log(
             $"Last scrape: {(lastScrape.HasValue ? lastScrape.Value.ToString("yyyy-MM-dd HH:mm:ss") : "Never")}");
 
-        var historicCounter = 0;
 
-        var historicRange = DateTime.Today.AddYears(-4);
+        if (!int.TryParse(_appSettings.HistoricRangeYears, out var backtraceNumberOfYears))
+        {
+            _logger.LogWarning(
+                $"Config file {nameof(_appSettings.HistoricRangeYears)} not set to a valid integer, defaulting value to 2.");
+            backtraceNumberOfYears = 2;
+        }
+
+        _logger.Log($"Backtracing {backtraceNumberOfYears} years");
+
+        var historicCounter = 0;
+        var historicRange = DateTime.Today.AddYears(-backtraceNumberOfYears);
         if (earliestScrape?.Date > historicRange.Date)
         {
             _logger.Log($"Scraping historic rolls from {historicRange} to {earliestScrape}");
@@ -54,8 +67,7 @@ public class ScrapeJob : IJob
             _logger.Log($"Captured {historicCounter} historic rolls...");
         }
 
-        
-        
+
         _logger.Log($"Scraping current rolls from {lastScrape} to {DateTime.Now}");
 
         var currentCounter = 0;
@@ -95,7 +107,7 @@ public class ScrapeJob : IJob
         if (nullChannels.Count > 0)
         {
             _logger.Log($"Found {nullChannels.Count} channels needing identifier reconciliation. Fixing...");
-            
+
             foreach (var channel in nullChannels)
             {
                 var channelInfo = await _channelService.GetChannel(channel.Id);
@@ -127,7 +139,7 @@ public class ScrapeJob : IJob
         {
             return;
         }
-        
+
         await _databaseConnection.InsertRoll(roll);
     }
 }

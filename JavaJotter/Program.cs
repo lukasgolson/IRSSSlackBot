@@ -65,14 +65,25 @@ public static class Program
     }
 
 
-    private static IAppAuthSettings RetrieveAuthSettings()
+    private static IAppSettings RetrieveAuthSettings()
     {
-        var settings = new ConfigurationBuilder<IAppAuthSettings>()
-            .UseYamlFile("token.yaml").Build();
+        var settings = new ConfigurationBuilder<IAppSettings>()
+            .UseYamlFile("settings.yaml").Build();
 
-        return settings.OAuthToken == string.Empty
-            ? throw new ConfigurationErrorsException("OAuthToken is empty. Please add it to token.yaml")
-            : settings;
+
+        if (settings.OAuthToken == string.Empty)
+        {
+            throw new ConfigurationErrorsException("OAuthToken is empty. Please add it to settings.yaml");
+        }
+
+
+        if (string.IsNullOrEmpty(settings.HistoricRangeYears))
+        {
+            settings.HistoricRangeYears = "1";
+        }
+        
+    
+        return settings;
     }
 
     private static IContainer BuildContainer()
@@ -85,7 +96,7 @@ public static class Program
 
         var settings = RetrieveAuthSettings();
 
-        builder.Register(c => settings).As<IAppAuthSettings>().SingleInstance();
+        builder.Register(c => settings).As<IAppSettings>().SingleInstance();
 
 
         if (_onlineMode)

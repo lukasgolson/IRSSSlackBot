@@ -14,10 +14,10 @@ public class PostgresDatabaseService : IDatabaseConnection
 
     private bool _tablesCreated;
 
-    public PostgresDatabaseService(IAppAuthSettings appAuthSettings)
+    public PostgresDatabaseService(IAppSettings appSettings)
     {
         _dataSource = NpgsqlDataSource.Create(
-            $"Host={appAuthSettings.DatabaseHost};Port={appAuthSettings.DatabasePort};Username={appAuthSettings.DatabaseUsername};Password={appAuthSettings.DatabasePassword};Database={appAuthSettings.Database}");
+            $"Host={appSettings.DatabaseHost};Port={appSettings.DatabasePort};Username={appSettings.DatabaseUsername};Password={appSettings.DatabasePassword};Database={appSettings.Database}");
     }
 
     public async Task InsertRoll(Roll roll)

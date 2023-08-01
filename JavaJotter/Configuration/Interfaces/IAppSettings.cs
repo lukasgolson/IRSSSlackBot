@@ -1,6 +1,6 @@
 ﻿namespace JavaJotter.Configuration.Interfaces;
 
-public interface IAppAuthSettings
+public interface IAppSettings
 {
     public string OAuthToken { get; }
     public string SigningSecret { get; }
@@ -10,4 +10,5 @@ public interface IAppAuthSettings
     string DatabaseUsername { get; }
     string DatabasePassword { get; }
     string Database { get; }
+    string HistoricRangeYears { get; set; }
 }
