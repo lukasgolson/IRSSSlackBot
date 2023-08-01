@@ -41,11 +41,11 @@ public class ScrapeJob : IJob
 
         var historicCounter = 0;
 
-        var oneYearAgo = DateTime.Today.AddYears(-1);
-        if (earliestScrape?.Date > oneYearAgo.Date)
+        var historicRange = DateTime.Today.AddYears(-4);
+        if (earliestScrape?.Date > historicRange.Date)
         {
-            _logger.Log($"Scraping historic rolls from {oneYearAgo} to {earliestScrape}");
-            await foreach (var message in _messageScrapper.Scrape(oneYearAgo, earliestScrape))
+            _logger.Log($"Scraping historic rolls from {historicRange} to {earliestScrape}");
+            await foreach (var message in _messageScrapper.Scrape(historicRange, earliestScrape))
             {
                 historicCounter++;
                 await ProcessRoll(message);

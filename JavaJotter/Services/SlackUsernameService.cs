@@ -25,7 +25,8 @@ public class SlackUsernameService : IUsernameService
         _logger.Log($"Found {members.Count} users");
 
 
-        return members.Select(member => new Username(member.Id, CreateUsername(member.Profile.FirstName, member.Profile.LastName, member.Profile.DisplayName)))
+        return members.Select(member => new Username(member.Id,
+                CreateUsername(member.Profile.FirstName, member.Profile.LastName, member.Profile.DisplayName)))
             .ToList();
     }
 
