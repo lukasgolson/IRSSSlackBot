@@ -40,10 +40,25 @@ public class SlackUsernameService : IUsernameService
 
     private static string CreateUsername(User user, int maxLength = 7)
     {
-        var lengthPerName = maxLength / 2;
+        var lengthPerName = (maxLength - 1) / 2;
         string username;
 
-        if (!string.IsNullOrEmpty(user.Profile.FirstName) && !string.IsNullOrEmpty(user.Profile.LastName))
+
+        if (user.Deleted)
+        {
+            var prefix = "DELETED";
+
+            prefix = prefix.Length > lengthPerName
+                ? prefix[..lengthPerName]
+                : prefix;
+            var postfix = user.Id.Length > lengthPerName
+                ? user.Id[..lengthPerName]
+                : user.Id;
+
+            username = $"{prefix} {postfix}";
+        }
+        else if (!string.IsNullOrWhiteSpace(user.Profile.FirstName) &&
+                 !string.IsNullOrWhiteSpace(user.Profile.LastName))
         {
             var firstName = user.Profile.FirstName.Length > lengthPerName
                 ? user.Profile.FirstName[..lengthPerName]
@@ -54,16 +69,23 @@ public class SlackUsernameService : IUsernameService
 
             username = $"{firstName} {lastName}";
         }
-        else if (!string.IsNullOrEmpty(user.Profile.DisplayName))
+        else if (!string.IsNullOrWhiteSpace(user.Profile.DisplayName))
         {
-            username = user.Profile.DisplayName.Length > maxLength
-                ? user.Profile.DisplayName[..maxLength]
-                : user.Profile.DisplayName;
+            username = user.Profile.DisplayName;
+        }
+        else if (!string.IsNullOrWhiteSpace(user.Profile.FirstName))
+        {
+            username = user.Profile.FirstName;
+        }
+        else if (!string.IsNullOrWhiteSpace(user.Profile.RealName))
+        {
+            username = user.Profile.RealName;
         }
         else
         {
             username = user.Id.Length > maxLength ? user.Id[..maxLength] : user.Id;
         }
+
 
         if (username.Length > maxLength)
         {
