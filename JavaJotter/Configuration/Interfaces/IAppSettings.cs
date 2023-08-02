@@ -11,4 +11,5 @@ public interface IAppSettings
     string DatabasePassword { get; }
     string Database { get; }
     string HistoricRangeYears { get; set; }
+    string ScrapeCronExpression { get; }
 }
