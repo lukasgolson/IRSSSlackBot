@@ -4,6 +4,7 @@ using Autofac;
 using Autofac.Extras.Quartz;
 using Config.Net;
 using JavaJotter.Configuration.Interfaces;
+using JavaJotter.Enums;
 using JavaJotter.Interfaces;
 using JavaJotter.Services;
 using JavaJotter.Services.Databases;

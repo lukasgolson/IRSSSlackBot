@@ -1,4 +1,4 @@
-﻿namespace JavaJotter;
+﻿namespace JavaJotter.Enums;
 
 internal enum DbProviderEnum
 {
