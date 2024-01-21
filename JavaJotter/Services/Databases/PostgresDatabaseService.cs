@@ -17,7 +17,8 @@ public class PostgresDatabaseService : IDatabaseConnection
     public PostgresDatabaseService(IAppSettings appSettings)
     {
         _dataSource = NpgsqlDataSource.Create(
-            $"Host={appSettings.DatabaseHost};Port={appSettings.DatabasePort};Username={appSettings.DatabaseUsername};Password={appSettings.DatabasePassword};Database={appSettings.Database}");
+            appSettings.DatabaseConnectionString);
+
     }
 
     public async Task InsertRoll(Roll roll)
