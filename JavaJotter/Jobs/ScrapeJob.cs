@@ -37,6 +37,7 @@ public class ScrapeJob : IJob
         var latestRoll = await _databaseConnection.GetLatestRoll();
         var earliestRoll = await _databaseConnection.GetEarliestRoll();
 
+
         var lastScrape = latestRoll?.DateTime;
         var earliestScrape = earliestRoll?.DateTime;
 

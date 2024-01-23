@@ -13,12 +13,30 @@ public class PostgresDatabaseService : IDatabaseConnection
     private readonly NpgsqlDataSource _dataSource;
 
     private bool _tablesCreated;
+    private readonly ILogger _logger;
 
-    public PostgresDatabaseService(IAppSettings appSettings)
+    public PostgresDatabaseService(IAppSettings appSettings, ILogger logger)
     {
-        _dataSource = NpgsqlDataSource.Create(
-            appSettings.DatabaseConnectionString);
+        _logger = logger;
 
+
+        try
+        {
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(appSettings.DatabaseConnectionString);
+            _dataSource = dataSourceBuilder.Build();
+
+            var testConnection = _dataSource.OpenConnection();
+            _logger.Log(testConnection.ServerVersion);
+            testConnection.Close();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e.Message);
+            throw;
+        }
+
+
+        //  _dataSource = NpgsqlDataSource.Create(appSettings.DatabaseConnectionString);
     }
 
     public async Task InsertRoll(Roll roll)
@@ -137,7 +155,9 @@ public class PostgresDatabaseService : IDatabaseConnection
         INNER JOIN channels ON rolls.channel_id = channels.id
         ORDER BY rolls.unix_milliseconds DESC LIMIT 1;";
 
-        return await GetRoll(sql);
+        var roll = await GetRoll(sql);
+
+        return roll;
     }
 
     public async Task<Roll?> GetEarliestRoll()
@@ -158,6 +178,7 @@ public class PostgresDatabaseService : IDatabaseConnection
     {
         await using var command = _dataSource.CreateCommand(sql);
         await using var reader = await command.ExecuteReaderAsync();
+
 
         if (!await reader.ReadAsync())
             return null;
@@ -285,6 +306,11 @@ public class PostgresDatabaseService : IDatabaseConnection
         await using var command = _dataSource.CreateCommand(sql);
         foreach (var param in parameters) command.Parameters.AddWithValue(param.Key, param.Value);
 
-        await command.ExecuteNonQueryAsync();
+        var execute = await command.ExecuteNonQueryAsync();
+
+        if (execute == 0)
+        {
+            _logger.LogError($"Failed to execute SQL {execute}");
+        }
     }
 }
