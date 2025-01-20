@@ -2,14 +2,13 @@
 using JavaJotter.Interfaces;
 using JavaJotter.Jobs;
 using Quartz;
-using Quartz.Util;
 
 namespace JavaJotter.Services;
 
 public class JobScheduler : IJobScheduler
 {
-    private readonly IScheduler _scheduler;
     private readonly ILogger _logger;
+    private readonly IScheduler _scheduler;
     private readonly string _schedulingCronExpression;
 
     public JobScheduler(IScheduler scheduler, ILogger logger, IAppSettings appSettings)
@@ -18,7 +17,9 @@ public class JobScheduler : IJobScheduler
         _logger = logger;
         _schedulingCronExpression = appSettings.ScrapeCronExpression;
 
-        _schedulingCronExpression = string.IsNullOrWhiteSpace(appSettings.ScrapeCronExpression) ? "0 0 9,17 ? * *" : appSettings.ScrapeCronExpression;
+        _schedulingCronExpression = string.IsNullOrWhiteSpace(appSettings.ScrapeCronExpression)
+            ? "0 0 9,17 ? * *"
+            : appSettings.ScrapeCronExpression;
     }
 
     public async Task Start()
@@ -42,6 +43,7 @@ public class JobScheduler : IJobScheduler
         _logger.Log("Scheduled scraping with cron expression: " + _schedulingCronExpression);
 
         await _scheduler.TriggerJob(scrapeJob.Key);
+        _logger.Log("Triggered scraping");
     }
 
     public async Task Stop()

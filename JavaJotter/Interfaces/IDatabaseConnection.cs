@@ -6,6 +6,8 @@ public interface IDatabaseConnection
 {
     public Task InsertRoll(Roll roll);
 
+    public Task InsertMessage(Message message);
+
     public Task UpdateUsername(Username username);
     public Task UpdateChannel(Channel username);
 
@@ -15,5 +17,4 @@ public interface IDatabaseConnection
     public Task<Roll?> GetLatestRoll();
 
     public Task<Roll?> GetEarliestRoll();
-
 }

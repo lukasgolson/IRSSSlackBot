@@ -11,9 +11,9 @@ namespace JavaJotter.Services.Databases;
 public class PostgresDatabaseService : IDatabaseConnection
 {
     private readonly NpgsqlDataSource _dataSource;
+    private readonly ILogger _logger;
 
     private bool _tablesCreated;
-    private readonly ILogger _logger;
 
     public PostgresDatabaseService(IAppSettings appSettings, ILogger logger)
     {
@@ -72,6 +72,11 @@ public class PostgresDatabaseService : IDatabaseConnection
         };
 
         await ExecuteSqlWithParametersAsync(sql, parameters);
+    }
+
+    public Task InsertMessage(Message message)
+    {
+        throw new NotImplementedException();
     }
 
 

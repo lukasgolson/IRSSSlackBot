@@ -9,13 +9,13 @@ namespace JavaJotter.Jobs;
 [UsedImplicitly]
 public class ScrapeJob : IJob
 {
-    private readonly ILogger _logger;
-    private readonly IMessageScrapper _messageScrapper;
-    private readonly IRollFilter _filter;
-    private readonly IUsernameService _usernameService;
+    private readonly IAppSettings _appSettings;
     private readonly IChannelService _channelService;
     private readonly IDatabaseConnection _databaseConnection;
-    private readonly IAppSettings _appSettings;
+    private readonly IRollFilter _filter;
+    private readonly ILogger _logger;
+    private readonly IMessageScrapper _messageScrapper;
+    private readonly IUsernameService _usernameService;
 
 
     public ScrapeJob(ILogger logger, IMessageScrapper messageScrapper, IRollFilter filter,
@@ -62,7 +62,7 @@ public class ScrapeJob : IJob
             await foreach (var message in _messageScrapper.Scrape(historicRange, earliestScrape))
             {
                 historicCounter++;
-                await ProcessRoll(message);
+                await ProcessMessage(message);
             }
 
             _logger.Log($"Captured {historicCounter} historic rolls...");
@@ -75,7 +75,7 @@ public class ScrapeJob : IJob
         await foreach (var message in _messageScrapper.Scrape(lastScrape, DateTime.Now))
         {
             currentCounter++;
-            await ProcessRoll(message);
+            await ProcessMessage(message);
         }
 
         _logger.Log($"Captured {currentCounter} current rolls...");
@@ -133,7 +133,7 @@ public class ScrapeJob : IJob
         _logger.Log(completeString);
     }
 
-    private async Task ProcessRoll(Message message)
+    private async Task ProcessMessage(Message message)
     {
         var roll = _filter.ExtractRoll(message);
         if (roll == null)

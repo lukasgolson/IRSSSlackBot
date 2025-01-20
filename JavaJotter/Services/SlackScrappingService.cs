@@ -50,7 +50,7 @@ public class SlackScrappingService : IMessageScrapper
         var latestTs = latestMessage == null ? DateTime.Now.ToTimestamp() : latestMessage.Value.ToTimestamp();
 
         var oldestTs = oldestMessage == null
-            ? DateTime.Now.AddYears(-1).ToTimestamp()
+            ? DateTime.Now.AddYears(-2).ToTimestamp()
             : oldestMessage.Value.ToTimestamp();
 
         var historyMessages = new List<MessageEvent>();

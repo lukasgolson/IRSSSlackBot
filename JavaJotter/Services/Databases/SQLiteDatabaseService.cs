@@ -20,6 +20,12 @@ public partial class SqLiteDatabaseService : IDatabaseConnection, IDisposable
     }
 
 
+    public async Task InsertMessage(Message message)
+    {
+        if (_sqLiteConnection?.State != ConnectionState.Open)
+            await Connect();
+    }
+
     public async Task UpdateUsername(Username username)
     {
         if (_sqLiteConnection?.State != ConnectionState.Open) await Connect();
@@ -124,23 +130,6 @@ public partial class SqLiteDatabaseService : IDatabaseConnection, IDisposable
         return await GetRoll(sql);
     }
 
-    private async Task<Roll?> GetRoll(string sql)
-    {
-        await using var command = new SQLiteCommand(sql, _sqLiteConnection);
-
-
-        await using var reader = await command.ExecuteReaderAsync();
-
-        if (!await reader.ReadAsync())
-            return null;
-
-        var dateTime = DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(reader.GetOrdinal("unix_milliseconds")))
-            .DateTime;
-        var userId = reader.GetString(reader.GetOrdinal("user_id"));
-        var value = reader.GetInt32(reader.GetOrdinal("dice_value"));
-
-        return new Roll(dateTime, "", userId, value);
-    }
 
     public async Task<List<Username>> GetNullUsernames()
     {
@@ -196,6 +185,43 @@ public partial class SqLiteDatabaseService : IDatabaseConnection, IDisposable
         _sqLiteConnection?.Dispose();
     }
 
+    private async Task<Roll?> GetRoll(string sql)
+    {
+        await using var command = new SQLiteCommand(sql, _sqLiteConnection);
+
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+            return null;
+
+        var dateTime = DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(reader.GetOrdinal("unix_milliseconds")))
+            .DateTime;
+        var userId = reader.GetString(reader.GetOrdinal("user_id"));
+        var value = reader.GetInt32(reader.GetOrdinal("dice_value"));
+
+        return new Roll(dateTime, "", userId, value);
+    }
+
+    private async Task<Message> GetMessage(string sql)
+    {
+        await using var command = new SQLiteCommand(sql, _sqLiteConnection);
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+            throw new Exception("No message found.");
+
+        var dateTime = DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(reader.GetOrdinal("unix_milliseconds")))
+            .DateTime;
+
+        var channel = reader.GetString(reader.GetOrdinal("channel_id"));
+        var userId = reader.GetString(reader.GetOrdinal("user_id"));
+        var text = reader.GetString(reader.GetOrdinal("text"));
+
+        return new Message(channel, dateTime, Guid.NewGuid(), userId, text, Array.Empty<string>());
+    }
+
     private string? GetSqLiteVersion()
     {
         const string sql = @"SELECT SQLITE_VERSION()";
@@ -210,6 +236,7 @@ public partial class SqLiteDatabaseService : IDatabaseConnection, IDisposable
         CreateUsernameTableIfNotExist(connection);
         CreateRollTableIfNotExist(connection);
         CreateChannelTableIfNotExist(connection);
+        CreateMessageTableIfNotExist(connection);
     }
 
     private static void CreateUsernameTableIfNotExist(SQLiteConnection sqLiteConnection)
@@ -253,6 +280,27 @@ public partial class SqLiteDatabaseService : IDatabaseConnection, IDisposable
 
         using var createRollTableCommand = new SQLiteCommand(sql, sqLiteConnection);
         createRollTableCommand.ExecuteNonQuery();
+    }
+
+    private static void CreateMessageTableIfNotExist(SQLiteConnection sqLiteConnection)
+    {
+        const string sql = """
+                           
+                                   CREATE TABLE IF NOT EXISTS rolls (
+                                       unix_milliseconds INTEGER NOT NULL,
+                                       channel_id INTEGER NOT NULL,
+                                       user_id INTEGER NOT NULL,
+                                       text TEXT NOT NULL,
+                                       FOREIGN KEY (user_id) REFERENCES usernames(id),
+                                       FOREIGN KEY (channel_id) REFERENCES channels(id),
+                                       PRIMARY KEY (unix_milliseconds, channel_id)
+                               );
+                               CREATE INDEX IF NOT EXISTS unix_milliseconds_index ON rolls (unix_milliseconds);
+                           """;
+
+
+        using var createMessageTableCommand = new SQLiteCommand(sql, sqLiteConnection);
+        createMessageTableCommand.ExecuteNonQuery();
     }
 
 
